@@ -15,7 +15,7 @@ interface ERC20Interface{
     event Approval(address indexed tokenOwner, address indexed spender, uint tokens);
 }
 
-contract Cryptos is ERC20Interface{
+contract MLCoinToken is ERC20Interface{
     string public name = "MLCoin";
     string public symbol = "MLC";
     uint public decimals = 0; // 18
@@ -23,6 +23,8 @@ contract Cryptos is ERC20Interface{
 
     address public founder;
     mapping(address => uint) public balances;
+
+    mapping(address => mapping(address => uint)) allowed;
 
     constructor(){
         totalSupply = 1000000;
@@ -41,6 +43,30 @@ contract Cryptos is ERC20Interface{
         balances[msg.sender] -= tokens;
 
         emit Transfer(msg.sender, to, tokens);
+
+        return true;
+    }
+
+    function allowance(address tokenOwner, address spender) view public override retunrs(uint) {
+        return allowed[tokenOwner][spender];
+    }
+
+    function approve(address spender, uint tokens) public override returns (bool success){
+        require(balances[msg.sender] >= tokens);
+        require(tokens > 0);
+
+        allowed[msg.sender][spender] = tokens;
+        emit Approval(msg.sender, spender, tokens);
+        return true;
+    }
+
+    function transferFrom(address from, address to, uint tokens) public override returns(bool success){
+        require(allowed[from][to] >= tokens);
+        require(balances[from] >= tokens);
+
+        balances[from] -= tokens;
+        balances[to] += tokens;
+        allowed[from][to] -= tokens;
 
         return true;
     }
