@@ -26,6 +26,8 @@ contract MLCoinToken is ERC20Interface{
 
     mapping(address => mapping(address => uint)) allowed;
 
+    event Invest(address investor, uint value, uint tokens);
+
     constructor(){
         totalSupply = 1000000;
         founder = msg.sender;
@@ -36,7 +38,7 @@ contract MLCoinToken is ERC20Interface{
         return balances[tokenOwner];
     }
 
-    function transfer(address to, uint tokens) external returns(bool success){
+    function transfer(address to, uint tokens) public virtual override returns(bool success){
         require(balances[msg.sender] >= tokens);
 
         balances[to] += tokens;
@@ -60,7 +62,7 @@ contract MLCoinToken is ERC20Interface{
         return true;
     }
 
-    function transferFrom(address from, address to, uint tokens) public override returns(bool success){
+    function transferFrom(address from, address to, uint tokens) public virtual override returns(bool success){
         require(allowed[from][to] >= tokens);
         require(balances[from] >= tokens);
 
@@ -120,5 +122,48 @@ contract MLCoinTokenICO is MLCoinToken{
         } else {
             return State.afterEnd;
         }
+    }
+
+    function invest() payable public returns(bool){
+        icoState = getCurrentState();
+        require(icoState == State.running);
+
+        require(msg.value >= minInvestment && msg.value <= maxInvestment);
+        raisedAmount += msg.value;
+        require(raisedAmount <= hardCap);
+
+        uint tokens = msg.value / tokenPrice;
+
+        balances[msg.sender] += tokens;
+        balances[founder] -= tokens;
+        deposit.transfer(msg.value);
+
+        emit Invest(msg.sender, msg.value, tokens);
+
+        return true;
+    }
+
+    receive() payable external{
+        invest();
+    }
+
+    function transfer(address to, uint tokens) public override returns(bool success){
+        require(block.timestamp > tokenTradeStart);
+        MLCoinToken.transfer(to, tokens); // same as super.transfer(...)
+
+        return true;
+    }
+
+    function transferFrom(address from, address to, uint tokens) public override returns (bool){
+        require(block.timestamp > tokenTradeStart);
+        MLCoinToken.transferFrom(from, to, tokens);
+        return true;
+    }
+
+    function burn() public returns(bool){
+        icoState = getCurrentState();
+        require(icoState == State.afterEnd);
+        balances[founder] = 0;
+        return true;
     }
 }
