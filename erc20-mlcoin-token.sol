@@ -7,9 +7,9 @@ interface ERC20Interface{
     function balanceOf(address tokenOwner) external view returns(uint balance);
     function transfer(address to, uint token) external returns(bool success);
 
-    //function allowance(address tokenOwner, address spender) external view returns(uint remaining);
-    //function approve(address spender, uint tokens) external returns(bool success);
-    //function transferFrom(address from, address to, uint tokens) external returns(bool success);
+    function allowance(address tokenOwner, address spender) external view returns(uint remaining);
+    function approve(address spender, uint tokens) external returns(bool success);
+    function transferFrom(address from, address to, uint tokens) external returns(bool success);
 
     event Transfer(address indexed from, address indexed to, uint tokens);
     event Approval(address indexed tokenOwner, address indexed spender, uint tokens);
@@ -36,7 +36,7 @@ contract MLCoinToken is ERC20Interface{
         return balances[tokenOwner];
     }
 
-    function transfer(address to, uint token) external returns(bool success){
+    function transfer(address to, uint tokens) external returns(bool success){
         require(balances[msg.sender] >= tokens);
 
         balances[to] += tokens;
@@ -47,7 +47,7 @@ contract MLCoinToken is ERC20Interface{
         return true;
     }
 
-    function allowance(address tokenOwner, address spender) view public override retunrs(uint) {
+    function allowance(address tokenOwner, address spender) view public override returns(uint) {
         return allowed[tokenOwner][spender];
     }
 
